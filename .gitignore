@@ -1,0 +1,8 @@
+venv/
+.venv/
+__pycache__/
+.env
+*.faiss
+chroma_db/
+cache/
+data/raw/

@@ -1,0 +1,29 @@
+{
+  "sources": [
+    {
+      "source": "fastapi",
+      "num_pages": 80,
+      "num_passages": 712,
+      "num_sections": 635,
+      "total_words": 243629,
+      "total_tokens": 379479,
+      "avg_tokens_per_passage": 533.0
+    },
+    {
+      "source": "pytorch",
+      "num_pages": 79,
+      "num_passages": 480,
+      "num_sections": 393,
+      "total_words": 182087,
+      "total_tokens": 392901,
+      "avg_tokens_per_passage": 818.5
+    }
+  ],
+  "combined": {
+    "total_pages": 159,
+    "total_passages": 1192,
+    "total_sections": 1028,
+    "total_words": 425716,
+    "total_tokens": 772380
+  }
+}

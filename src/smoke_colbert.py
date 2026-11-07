@@ -146,7 +146,7 @@ def record_choice(name: str, loader: str) -> None:
     text = path.read_text(encoding="utf-8")
     for key, value in (("COLBERT_MODEL", name), ("COLBERT_LOADER", loader)):
         text = re.sub(rf"^{key} = .*?$", f"{key} = {json.dumps(value)}", text, flags=re.MULTILINE)
-    path.write_text(text, encoding="utf-8")
+    path.write_text(text, encoding="utf-8", newline="\n")
     print(f"PASS ColBERT: {name} ({loader})", flush=True)
 
 

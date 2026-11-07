@@ -4,12 +4,13 @@ import re
 import sys
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from chunkers import chunk_fixed_spans, count_tokens, group_sentences, sentence_spans, window_chunks
+from chunkers import bounded_fixed_spans, chunk_fixed_spans, count_tokens, group_sentences, locate_recursive_piece, semantic_source_data, sentence_spans, window_chunks
 from config import CHUNKERS, COLBERT_MODEL, MAX_CHUNK_TOKENS, SEED, SINGLE_VECTOR_MODELS, SOURCES, TOKENIZER_NAME
 from data_access import load_chunks, load_passages
 
@@ -73,6 +74,41 @@ def unit_checks() -> None:
     assert [text[a:b] for a, b in spans] == ["One.", "Two!", "Three?", "Four.", "Five.", "Six."]
     groups = group_sentences(text, spans, 5, 400, lambda value: len(value.split()), lambda a, b: [(a, b)])
     assert groups == [(spans[0][0], spans[4][1]), spans[5]]
+    class BoundaryTokenizer:
+        def __call__(self, text: str, **kwargs: Any) -> dict:
+            offsets = [(i, i + 1) for i in range(len(text))]
+            if text.startswith("b"):
+                offsets.insert(0, (0, 1))
+            return {"offset_mapping": offsets, "input_ids": list(range(len(offsets)))}
+
+    text = "a" * 350 + "b" + "a" * 649
+    tokenizer = BoundaryTokenizer()
+    with patch("chunkers.get_tokenizer", return_value=tokenizer):
+        spans = bounded_fixed_spans(text, 50)
+        assert all(count_tokens(text[a:b]) <= MAX_CHUNK_TOKENS for a, b in spans)
+        assert all(left[1] - right[0] == 50 for left, right in zip(spans, spans[1:]))
+        assert spans[0][0] == 0 and spans[-1][1] == len(text)
+    text = "head shared tail. Other content. head shared tail."
+    piece = "shared tail."
+    assert locate_recursive_piece(text, piece, text.rfind(piece), 0, len("head shared")) == text.find(piece)
+    try:
+        locate_recursive_piece("head MISSING tail", "tail", 13, 0, 4)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Recursive alignment skipped non-whitespace source text")
+    class SplitEncoder:
+        def encode(self, sentences: list[str]) -> np.ndarray:
+            assert sentences == ["One.", "Two.", "Three.", "Four."]
+            return np.asarray([[1, 0], [1, 0], [0, 1], [1, 0]], dtype=np.float32)
+
+    semantic_source_data.cache_clear()
+    with patch("chunkers.load_passages", return_value=[{"text": "One. Two."}, {"text": "Three. Four."}]), patch("embedders.SplitEmbedder", SplitEncoder):
+        spans, similarities, threshold = semantic_source_data("fastapi")
+        assert [len(value) for value in spans] == [2, 2]
+        assert np.allclose([values[0] for values in similarities], [1, 0])
+        assert np.isclose(threshold, 0.2)
+    semantic_source_data.cache_clear()
     print("PASS offline window, coverage and sentence-group checks", flush=True)
 
 

@@ -97,8 +97,26 @@ def chunk_fixed_spans(text: str, tokenizer: Any, size: int, overlap: int) -> lis
     return [(a, b) for a, b, _ in window_chunks(offsets, size, overlap)]
 
 
+def bounded_fixed_spans(text: str, overlap: int) -> list[tuple[int, int]]:
+    tokenizer = get_tokenizer()
+    offsets = tokenizer(text, add_special_tokens=False, return_offsets_mapping=True)["offset_mapping"]
+    output = []
+    i = 0
+    while i < len(offsets):
+        j = min(i + MAX_CHUNK_TOKENS, len(offsets))
+        while j > i and count_tokens(text[offsets[i][0]:offsets[j - 1][1]]) > MAX_CHUNK_TOKENS:
+            j -= 1
+        if j == i:
+            raise ValueError("A token cannot be represented within the chunk cap")
+        output.append((offsets[i][0], offsets[j - 1][1]))
+        if j == len(offsets):
+            break
+        i = max(i + 1, j - overlap)
+    return output
+
+
 def hard_split(text: str, start: int, end: int) -> list[tuple[int, int]]:
-    return [(start + a, start + b) for a, b in chunk_fixed_spans(text[start:end], get_tokenizer(), MAX_CHUNK_TOKENS, 0)]
+    return [(start + a, start + b) for a, b in bounded_fixed_spans(text[start:end], 0)]
 
 
 def semantic_spans(text: str, spans: list[tuple[int, int]], similarities: np.ndarray, threshold: float) -> list[tuple[int, int]]:
@@ -122,6 +140,20 @@ def semantic_spans(text: str, spans: list[tuple[int, int]], similarities: np.nda
     return out
 
 
+def locate_recursive_piece(text: str, piece: str, suggested: int, previous_start: int, previous_end: int) -> int:
+    def valid(start: int) -> bool:
+        return start >= previous_start and text[start:start + len(piece)] == piece and start + len(piece) > previous_end and (start <= previous_end or not text[previous_end:start].strip())
+
+    if suggested >= 0 and valid(suggested):
+        return suggested
+    start = text.find(piece, previous_start)
+    while start >= 0:
+        if valid(start):
+            return start
+        start = text.find(piece, start + 1)
+    raise ValueError("Recursive chunk cannot be located without losing source coverage")
+
+
 @lru_cache(maxsize=1)
 def semantic_source_data(source: str) -> tuple[list[list[tuple[int, int]]], list[np.ndarray], float]:
     from embedders import SplitEmbedder
@@ -129,13 +161,16 @@ def semantic_source_data(source: str) -> tuple[list[list[tuple[int, int]]], list
     passages = load_passages(source)
     spans_by_passage = [sentence_spans(passage["text"]) for passage in passages]
     model = SplitEmbedder()
+    sentences = [passage["text"][a:b] for passage, spans in zip(passages, spans_by_passage) for a, b in spans]
+    print(f"Embedding semantic sentence units: {source}, {len(sentences)} units", flush=True)
+    vectors = model.encode(sentences)
+    print(f"Encoded semantic sentence units: {source}", flush=True)
     similarities = []
-    for passage, spans in zip(passages, spans_by_passage):
-        if len(spans) < 2:
-            similarities.append(np.empty(0, dtype=np.float32))
-            continue
-        vectors = model.encode([passage["text"][a:b] for a, b in spans])
-        similarities.append(np.sum(vectors[:-1] * vectors[1:], axis=1))
+    offset = 0
+    for spans in spans_by_passage:
+        passage_vectors = vectors[offset:offset + len(spans)]
+        similarities.append(np.sum(passage_vectors[:-1] * passage_vectors[1:], axis=1))
+        offset += len(spans)
     joined = [values for values in similarities if len(values)]
     threshold = float(np.percentile(np.concatenate(joined), SEMANTIC_PERCENTILE)) if joined else float("-inf")
     print(f"Semantic threshold {source}: {threshold:.6f}", flush=True)
@@ -144,7 +179,7 @@ def semantic_source_data(source: str) -> tuple[list[list[tuple[int, int]]], list
 
 def chunk_passage(chunker: str, text: str) -> list[tuple[int, int]]:
     if chunker == "fixed":
-        return chunk_fixed_spans(text, get_tokenizer(), MAX_CHUNK_TOKENS, FIXED_OVERLAP_TOKENS)
+        return bounded_fixed_spans(text, FIXED_OVERLAP_TOKENS)
     if chunker == "sentence":
         return group_sentences(text, sentence_spans(text), SENTENCES_PER_CHUNK, MAX_CHUNK_TOKENS, count_tokens, lambda a, b: hard_split(text, a, b))
     if chunker == "recursive":
@@ -153,17 +188,15 @@ def chunk_passage(chunker: str, text: str) -> list[tuple[int, int]]:
         splitter = RecursiveCharacterTextSplitter(chunk_size=MAX_CHUNK_TOKENS, chunk_overlap=RECURSIVE_OVERLAP_TOKENS, length_function=count_tokens, separators=["\n\n", "\n", ". ", " ", ""], add_start_index=True, strip_whitespace=True)
         out = []
         previous_start = 0
+        previous_end = 0
         for document in splitter.create_documents([text]):
             piece = document.page_content
-            start = document.metadata["start_index"]
-            if start < 0 or text[start:start + len(piece)] != piece:
-                start = text.find(piece, previous_start)
-            if start < 0:
-                raise ValueError("Recursive chunk cannot be located in its passage")
+            start = locate_recursive_piece(text, piece, document.metadata["start_index"], previous_start, previous_end)
             end = start + len(piece)
             assert text[start:end] == piece
             out.append((start, end))
             previous_start = start
+            previous_end = end
         return out
     if chunker == "semantic":
         for source in SOURCES:

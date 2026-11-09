@@ -1,0 +1,20 @@
+[
+  {
+    "config_id": "recursive__minilm__distilbert",
+    "chunker": "recursive",
+    "embedder": "minilm",
+    "retrieval": "distilbert"
+  },
+  {
+    "config_id": "recursive__bge__distilbert",
+    "chunker": "recursive",
+    "embedder": "bge",
+    "retrieval": "distilbert"
+  },
+  {
+    "config_id": "recursive__bge__distilbert_bm25",
+    "chunker": "recursive",
+    "embedder": "bge",
+    "retrieval": "distilbert_bm25"
+  }
+]

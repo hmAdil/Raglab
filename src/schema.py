@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from config import TOP_K
+
 
 @dataclass(frozen=True)
 class Hit:
@@ -11,7 +13,7 @@ class Hit:
 class Retriever:
     config_id: str
 
-    def retrieve(self, query: str, k: int = 5) -> list[Hit]:
+    def retrieve(self, query: str, k: int = TOP_K) -> list[Hit]:
         raise NotImplementedError
 
 

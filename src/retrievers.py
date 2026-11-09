@@ -13,7 +13,7 @@ def tokenize(text: str) -> list[str]:
     return re.findall(r"\w+", text.lower())
 
 
-def rrf_fuse(rankings, k=60, top_n=5):
+def rrf_fuse(rankings: list[list[str]], k: int = 60, top_n: int = 5) -> list[tuple[str, float]]:
     scores = {}
     for ranking in rankings:
         for rank, cid in enumerate(ranking, start=1):
@@ -45,10 +45,12 @@ class BM25Retriever(Retriever):
         return [Hit(self.chunk_ids[i], float(scores[i]), r) for r, i in enumerate(order[:k], start=1)]
 
 
-def rescoring_retrieve(query, first_stage, bm25, scorer, depth, k, rrf_k, use_bm25):
+def rescoring_retrieve(query: str, first_stage: Retriever, bm25: Retriever | None, scorer: Scorer,
+                       depth: int, k: int, rrf_k: int, use_bm25: bool) -> list[Hit]:
     pool = [h.chunk_id for h in first_stage.retrieve(query, depth)]
-    bm25_ids = []
+    bm25_ids: list[str] = []
     if use_bm25:
+        assert bm25 is not None
         bm25_ids = [h.chunk_id for h in bm25.retrieve(query, depth)]
         seen = set(pool)
         for cid in bm25_ids:

@@ -3,12 +3,12 @@ import re
 import numpy as np
 
 
-def normalize_section(s):
+def normalize_section(s: str | None) -> str:
     s = (s or "").replace("\ufffd", "").replace("\u00b6", "").replace("#", "")
     return re.sub(r"\s+", " ", s).strip().lower()
 
 
-def find_all(text, span):
+def find_all(text: str, span: str) -> list[tuple[int, int]]:
     out = []
     start = text.find(span)
     while start != -1:
@@ -17,7 +17,7 @@ def find_all(text, span):
     return out
 
 
-def gold_locations(passages, gold):
+def gold_locations(passages: list[dict], gold: dict) -> list[tuple[int, int, int]]:
     sec = normalize_section(gold["section"])
     span = gold["span"]
     locs = []
@@ -33,7 +33,7 @@ def gold_locations(passages, gold):
     return locs
 
 
-def score_retrieval(retrieved_chunks, locs):
+def score_retrieval(retrieved_chunks: list[dict], locs: list[tuple[int, int, int]]) -> dict:
     best_cov = 0.0
     hit = False
     for (pidx, ga, gb) in locs:

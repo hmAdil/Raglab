@@ -12,7 +12,7 @@ from config import CHARTS_DIR
 DPI = 150
 
 
-def save(fig, name: str) -> None:
+def save(fig: plt.Figure, name: str) -> None:
     CHARTS_DIR.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
     fig.savefig(CHARTS_DIR / name, dpi=DPI)

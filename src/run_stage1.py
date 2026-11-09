@@ -10,6 +10,7 @@ import pandas as pd
 
 from config import (CHUNKERS, EMBEDDERS, RESULTS_DIR, RETRIEVALS, SEED, TOP_CONFIGS_FOR_STAGE2,
                     TOP_K, config_id)
+from analysis import stage1_table
 from data_access import chunk_index, load_passages, load_testset
 from metrics import gold_locations, score_retrieval
 from retrievers import get_retriever
@@ -129,6 +130,7 @@ def main() -> None:
     merge_csv(RESULTS_DIR / "stage1_per_question.csv", pd.DataFrame(per_q_rows), PER_Q_COLS, replaced)
     summary_df = merge_csv(RESULTS_DIR / "stage1.csv", pd.DataFrame(summaries), SUMMARY_COLS, replaced)
 
+    stage1_table()
     ranked = summary_df.sort_values(["context_recall", "context_precision", "retrieval_latency_ms"],
                                     ascending=[False, False, True], kind="stable")
     print(ranked[["config_id", "context_recall", "context_precision", "hit_rate",
@@ -142,7 +144,7 @@ def main() -> None:
     if len(summary_df) < len(all_config_ids()):
         print(f"WARNING: {len(summary_df)} of {len(all_config_ids())} configurations present, "
               "selection is provisional")
-    print(f"done: wrote stage1.csv ({len(summary_df)} rows), stage1_per_question.csv, top3.json: "
+    print(f"done: wrote stage1.csv ({len(summary_df)} rows), stage1_per_question.csv, stage1_table.md, top3.json: "
           f"{[t['config_id'] for t in top3]}")
 
 

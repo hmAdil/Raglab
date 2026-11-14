@@ -70,7 +70,7 @@ Body","FastAPI distinguishes a path parameter from a Pydantic request-body param
 
 If a parameter is declared to be of a singular type (such as int, float, str, bool, etc.), it will be interpreted as a query parameter. However, if a parameter is declared to be of the type of a Pydantic model, it will be interpreted as a request body.
 
-This means that if you have a function with both path parameters and Pydantic request-body parameters, FastAPI will automatically determine which one is which based on their type annotations.",,
+This means that if you have a function with both path parameters and Pydantic request-body parameters, FastAPI will automatically determine which one is which based on their type annotations.",3,2
 2,recursive__bge__distilbert__plain,p1_q01,What kind of model does FastAPI use to declare a request body?,FastAPI uses Pydantic models to declare request bodies.,"[recursive-001856] Request
 As FastAPI is actually Starlette underneath, with a layer of several tools on top, you can use Starlette's Request object directly when you need to.
 Request
@@ -121,7 +121,7 @@ PATCH
 Sending a body with a GET request has an undefined behavior in the specifications, nevertheless, it is supported by FastAPI, only for very complex/extreme use cases.
 GET
 As it is discouraged, the interactive docs with Swagger UI won't show the documentation for the body when using GET , and proxies in the middle might not support it.
-GET",Pydantic models.,,
+GET",Pydantic models.,5,5
 3,recursive__bge__distilbert__plain,p1_q06,How do you make a query parameter required in a FastAPI path operation function?,Declare the query parameter in the function signature without a default value.,"[recursive-000157] When you declare a default value for non-path parameters (for now, we have only seen query parameters), then it is not required.
 If you don't want to add a specific value but just make it optional, set the default as None .
 None
@@ -239,7 +239,7 @@ async def read_user_item(item_id: str, needy: str):
     return item
 ```
 
-In this example, the `needy` query parameter is required because it doesn't have a default value. If you try to access the endpoint without providing a value for `needy`, you'll get an error.",,
+In this example, the `needy` query parameter is required because it doesn't have a default value. If you try to access the endpoint without providing a value for `needy`, you'll get an error.",5,5
 4,recursive__minilm__distilbert__plain,p3_q08,Why can changing a CPU tensor also change its associated NumPy array?,"CPU tensors and NumPy arrays can share the same underlying memory. When they share storage, changing one also changes the other.","[recursive-002839] Tensors on the CPU and NumPy arrays can share their underlying memory
 locations, and changing one will change the other.
 
@@ -273,7 +273,7 @@ Download Jupyter notebook: tensorqs_tutorial.ipynb
 Download Python source code: tensorqs_tutorial.py
 Download Python source code: tensorqs_tutorial.py
 Download zipped: tensorqs_tutorial.zip
-Download zipped: tensorqs_tutorial.zip",Because they share the same underlying memory location.,,
+Download zipped: tensorqs_tutorial.zip",Because they share the same underlying memory location.,5,5
 5,recursive__minilm__distilbert__grounded,p3_q05,Which argument must be passed to backward when several backward calls are needed on the same PyTorch computation graph?,Pass retain_graph=True to the backward call to retain the graph for repeated backward computations.,"[recursive-002736] to do several backward calls on the same graph, we need to pass retain_graph=True to the backward call.
 We can only perform gradient calculations using backward once on a given graph, for performance reasons. If we need
 to do several backward calls on the same graph, we need to pass retain_graph=True to the backward call.
@@ -359,7 +359,7 @@ RegistrationDeclarations.h
 Tensor my_op1 ( const Tensor & self , const Tensor & other ) { // call your backend-specific APIs to implement my_op so that // it matches PyTorch's native behavior } TORCH_LIBRARY_IMPL ( aten , PrivateUse1 , m ) { m . impl ( < schema_my_op1 > , & my_op ); }
 In some cases, PyTorch backward kernel implementations are also device specific so that they can squeeze out
 max performance out of each backend. For those operators you’ll see op_backward showing up in RegistrationDeclarations.h as required registration as well.
-RegistrationDeclarations.h",retain_graph=True [recursive-002736],,
+RegistrationDeclarations.h",retain_graph=True [recursive-002736],5,5
 6,recursive__minilm__distilbert__grounded,p2_q03,How do you declare and inject a shared dependency in a FastAPI path operation function?,"Similar to Body and Query, you use Depends with a new parameter in your path operation function, typically annotating it with Annotated and Depends(common_parameters).","[recursive-000589] Next we will see how to add dependencies to the whole FastAPI application, so that they apply to each path operation .
 FastAPI
 
@@ -405,7 +405,7 @@ Notice that you don't have to create a special class and pass it somewhere to Fa
 You just pass it to Depends and FastAPI knows how to do the rest.
 Depends","You declare and inject a shared dependency in a FastAPI path operation function by using the `Depends()` function and passing the dependency as an argument, like this: `@app.get(""/items/"") def read_items: ... Depends(common_parameters)`.
 
-[recursive-000519] [recursive-000518] [recursive-000529] [recursive-000509]",,
+[recursive-000519] [recursive-000518] [recursive-000529] [recursive-000509]",5,4
 7,recursive__minilm__distilbert__plain,p1_q08,Why should /users/me be declared before /users/{user_id} in FastAPI?,"FastAPI evaluates path operations in declaration order. Declaring the fixed /users/me route first ensures it is matched before the parameterized /users/{user_id} route can interpret ""me"" as a user ID.","[recursive-000134] When creating path operations , you can find situations where you have a fixed path.
 Like /users/me , let's say that it's to get data about the current user.
 /users/me
@@ -465,7 +465,7 @@ In the case of the path operations /users/me and /users/{user_id}, the path oper
 
 For example, if the URL path is /users/me, the path operation /users/{user_id} would match the URL path and return the value of the user_id parameter, which would be ""me"". But if /users/me is declared first, the path operation /users/me would match the URL path and return the expected result, which is the data about the current user.
 
-Therefore, it is recommended to declare /users/me before /users/{user_id} in FastAPI to ensure that the more specific path operation is used first.",,
+Therefore, it is recommended to declare /users/me before /users/{user_id} in FastAPI to ensure that the more specific path operation is used first.",5,5
 8,recursive__bge__distilbert_bm25__grounded,p2_q07,What differentiation engine does PyTorch provide to compute gradients during backpropagation?,PyTorch provides a built-in differentiation engine named torch.autograd that automatically computes gradients for any computational graph.,"[recursive-002733] torch.autograd
 Created On: Feb 10, 2021 | Last Updated: Jan 16, 2024 | Last Verified: Nov 05, 2024
 When training neural networks, the most frequently used algorithm is back propagation . In this algorithm, parameters (model weights) are
@@ -567,7 +567,7 @@ LSTM
 GRU
 GRU
 encoder
-decoder",[torch.autograd],,
+decoder",[torch.autograd],5,5
 9,recursive__minilm__distilbert__plain,p1_q06,How do you make a query parameter required in a FastAPI path operation function?,Declare the query parameter in the function signature without a default value.,"[recursive-000157] When you declare a default value for non-path parameters (for now, we have only seen query parameters), then it is not required.
 If you don't want to add a specific value but just make it optional, set the default as None .
 None
@@ -665,7 +665,7 @@ async def read_items(q: str = Query(None), item_id: int = Query(None)):
     return results
 ```
 
-In this example, the `q` parameter is declared without a default value, which means it is required. If you try to make a request to this endpoint without providing a value for `q`, you will see an error.",,
+In this example, the `q` parameter is declared without a default value, which means it is required. If you try to make a request to this endpoint without providing a value for `q`, you will see an error.",2,3
 10,recursive__bge__distilbert_bm25__grounded,p3_q04,What is the internal dictionary containing a PyTorch model's learned parameters called?,The internal state dictionary containing the learned parameters is called state_dict.,"[recursive-002819] PyTorch models store the learned parameters in an internal
 state dictionary, called state_dict . These can be persisted via the torch.save method:
 state_dict
@@ -707,4 +707,4 @@ sphx_glr_beginner_basics_transforms_tutorial.py
 sphx_glr_beginner_basics_autogradqs_tutorial.py
 sphx_glr_beginner_basics_buildmodel_tutorial.py
 sphx_glr_beginner_basics_tensorqs_tutorial.py
-sphx_glr_beginner_basics_data_tutorial.py",state_dict [recursive-002819],,
+sphx_glr_beginner_basics_data_tutorial.py",state_dict [recursive-002819],5,5

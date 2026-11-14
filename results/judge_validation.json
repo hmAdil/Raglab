@@ -1,0 +1,13 @@
+{
+  "n_samples": 10,
+  "groundedness": {
+    "exact_agreement": 80.0,
+    "within_one_agreement": 80.0,
+    "mean_abs_diff": 0.5
+  },
+  "correctness": {
+    "exact_agreement": 80.0,
+    "within_one_agreement": 80.0,
+    "mean_abs_diff": 0.5
+  }
+}

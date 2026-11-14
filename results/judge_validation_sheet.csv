@@ -1,0 +1,710 @@
+row_id,run_id,question_id,question,reference_answer,retrieved_context,generated_answer,manual_groundedness,manual_correctness
+1,recursive__minilm__distilbert__plain,p1_q09,How does FastAPI distinguish a path parameter from a Pydantic request-body parameter when both are declared in one function?,Parameters whose names match path parameters come from the URL path. Parameters declared as Pydantic models come from the request body.,"[recursive-000168] You can declare path parameters and request body at the same time.
+FastAPI will recognize that the function parameters that match path parameters should be taken from the path , and that function parameters that are declared to be Pydantic models should be taken from the request body .
+from fastapi import FastAPI from pydantic import BaseModel class Item ( BaseModel ): name : str description : str | None = None price : float tax : float | None = None app = FastAPI () @app . put ( ""/items/ {item_id} "" ) async def update_item ( item_id : int , item : Item ): return { ""item_id"" : item_id , ** item . model_dump ()}
+from fastapi import FastAPI from pydantic import BaseModel class Item ( BaseModel ): name : str description : str | None = None price : float tax : float | None = None app = FastAPI () @app . put ( ""/items/ {item_id} "" ) async def update_item ( item_id : int , item : Item ): return { ""item_id"" : item_id , ** item . model_dump ()}
+
+[recursive-000266] You can add multiple body parameters to your path operation function , even though a request can only have a single body.
+But FastAPI will handle it, give you the correct data in your function, and validate and document the correct schema in the path operation .
+You can also declare singular values to be received as part of the body.
+And you can instruct FastAPI to embed the body in a key even when there is only a single parameter declared.
+
+[recursive-000170] If the parameter is of a singular type (like int , float , str , bool , etc) it will be interpreted as a query parameter.
+int
+float
+str
+bool
+If the parameter is declared to be of the type of a Pydantic model , it will be interpreted as a request body .
+Note
+FastAPI will know that the value of q is not required because of the default value = None .
+q
+= None
+The str | None is not used by FastAPI to determine that the value is not required, it will know it's not required because it has a default value of = None .
+str | None
+= None
+But adding the type annotations will allow your editor to give you better support and detect errors.
+
+[recursive-001857] Request
+Let's imagine you want to get the client's IP address/host inside of your path operation function .
+For that you need to access the request directly.
+from fastapi import FastAPI , Request app = FastAPI () @app . get ( ""/items/ {item_id} "" ) def read_root ( item_id : str , request : Request ): client_host = request . client . host return { ""client_host"" : client_host , ""item_id"" : item_id }
+from fastapi import FastAPI , Request app = FastAPI () @app . get ( ""/items/ {item_id} "" ) def read_root ( item_id : str , request : Request ): client_host = request . client . host return { ""client_host"" : client_host , ""item_id"" : item_id }
+By declaring a path operation function parameter with the type being the Request FastAPI will know to pass the Request in that parameter.
+Request
+Request
+Tip
+Note that in this case, we are declaring a path parameter beside the request parameter.
+So, the path parameter will be extracted, validated, converted to the specified type and annotated with OpenAPI.
+The same way, you can declare any other parameter as normally, and additionally, get the Request too.
+Request
+
+[recursive-000272] Field works the same way as Query , Path and Body , it has all the same parameters, etc.
+Field
+Query
+Path
+Body
+Technical Details
+Actually, Query , Path and others you'll see next create objects of subclasses of a common Param class, which is itself a subclass of Pydantic's FieldInfo class.
+Query
+Path
+Param
+FieldInfo
+And Pydantic's Field returns an instance of FieldInfo as well.
+Field
+FieldInfo
+Body also returns objects of a subclass of FieldInfo directly. And there are others you will see later that are subclasses of the Body class.
+Body
+FieldInfo
+Body
+Remember that when you import Query , Path , and others from fastapi , those are actually functions that return special classes.
+Query
+Path
+fastapi
+Tip
+Notice how each model's attribute with a type, default value and Field has the same structure as a path operation function's parameter, with Field instead of Path , Query and Body .
+Field
+Field
+Path
+Query
+Body","FastAPI distinguishes a path parameter from a Pydantic request-body parameter when both are declared in one function by checking the type annotations of the function parameters.
+
+If a parameter is declared to be of a singular type (such as int, float, str, bool, etc.), it will be interpreted as a query parameter. However, if a parameter is declared to be of the type of a Pydantic model, it will be interpreted as a request body.
+
+This means that if you have a function with both path parameters and Pydantic request-body parameters, FastAPI will automatically determine which one is which based on their type annotations.",,
+2,recursive__bge__distilbert__plain,p1_q01,What kind of model does FastAPI use to declare a request body?,FastAPI uses Pydantic models to declare request bodies.,"[recursive-001856] Request
+As FastAPI is actually Starlette underneath, with a layer of several tools on top, you can use Starlette's Request object directly when you need to.
+Request
+It would also mean that if you get data from the Request object directly (for example, read the body) it won't be validated, converted or documented (with OpenAPI, for the automatic API user interface) by FastAPI.
+Request
+Although any other parameter declared normally (for example, the body with a Pydantic model) would still be validated, converted, annotated, etc.
+But there are specific cases where it's useful to get the Request object.
+Request
+
+[recursive-000255] In this case, FastAPI will notice that there is more than one body parameter in the function (there are two parameters that are Pydantic models).
+So, it will then use the parameter names as keys (field names) in the body, and expect a body like:
+{ ""item"" : { ""name"" : ""Foo"" , ""description"" : ""The pretender"" , ""price"" : 42.0 , ""tax"" : 3.2 }, ""user"" : { ""username"" : ""dave"" , ""full_name"" : ""Dave Grohl"" } }
+{ ""item"" : { ""name"" : ""Foo"" , ""description"" : ""The pretender"" , ""price"" : 42.0 , ""tax"" : 3.2 }, ""user"" : { ""username"" : ""dave"" , ""full_name"" : ""Dave Grohl"" } }
+Note
+Notice that even though the item was declared the same way as before, it is now expected to be inside of the body with a key item .
+item
+item
+FastAPI will do the automatic conversion from the request, so that the parameter item receives its specific content and the same for user .
+item
+user
+It will perform the validation of the compound data, and will document it like that for the OpenAPI schema and automatic docs.
+
+[recursive-001521] from fastapi import FastAPI , Request app = FastAPI () def magic_data_reader ( raw_body : bytes ): return { ""size"" : len ( raw_body ), ""content"" : { ""name"" : ""Maaaagic"" , ""price"" : 42 , ""description"" : ""Just kiddin', no magic here. ✨"" , }, } @app . post ( ""/items/"" , openapi_extra = { ""requestBody"" : { ""content"" : { ""application/json"" : { ""schema"" : { ""required"" : [ ""name"" , ""price"" ], ""type"" : ""object"" , ""properties"" : { ""name"" : { ""type"" : ""string"" }, ""price"" : { ""type"" : ""number"" }, ""description"" : { ""type"" : ""string"" }, }, } } }, ""required"" : True , }, }, ) async def create_item ( request : Request ): raw_body = await request . body () data = magic_data_reader ( raw_body ) return data
+In this example, we didn't declare any Pydantic model. In fact, the request body is not even parsed as JSON, it is read directly as bytes , and the function magic_data_reader() would be in charge of parsing it in some way.
+bytes
+magic_data_reader()
+Nevertheless, we can declare the expected schema for the request body.
+
+[recursive-000283] This would mean that FastAPI would expect a body similar to:
+{ ""name"" : ""Foo"" , ""description"" : ""The pretender"" , ""price"" : 42.0 , ""tax"" : 3.2 , ""tags"" : [ ""rock"" , ""metal"" , ""bar"" ], ""image"" : { ""url"" : ""http://example.com/baz.jpg"" , ""name"" : ""The Foo live"" } }
+{ ""name"" : ""Foo"" , ""description"" : ""The pretender"" , ""price"" : 42.0 , ""tax"" : 3.2 , ""tags"" : [ ""rock"" , ""metal"" , ""bar"" ], ""image"" : { ""url"" : ""http://example.com/baz.jpg"" , ""name"" : ""The Foo live"" } }
+Again, doing just that declaration, with FastAPI you get:
+Editor support (completion, etc.), even for nested models
+Data conversion
+Data validation
+Automatic documentation
+
+[recursive-000160] When you need to send data from a client (let's say, a browser) to your API, you send it as a request body .
+A request body is data sent by the client to your API. A response body is the data your API sends to the client.
+Your API almost always has to send a response body. But clients don't necessarily need to send request bodies all the time, sometimes they only request a path, maybe with some query parameters, but don't send a body.
+To declare a request body, you use Pydantic models with all their power and benefits.
+Note
+To send data, you should use one of: POST (the most common), PUT , DELETE or PATCH .
+POST
+PUT
+DELETE
+PATCH
+Sending a body with a GET request has an undefined behavior in the specifications, nevertheless, it is supported by FastAPI, only for very complex/extreme use cases.
+GET
+As it is discouraged, the interactive docs with Swagger UI won't show the documentation for the body when using GET , and proxies in the middle might not support it.
+GET",Pydantic models.,,
+3,recursive__bge__distilbert__plain,p1_q06,How do you make a query parameter required in a FastAPI path operation function?,Declare the query parameter in the function signature without a default value.,"[recursive-000157] When you declare a default value for non-path parameters (for now, we have only seen query parameters), then it is not required.
+If you don't want to add a specific value but just make it optional, set the default as None .
+None
+But when you want to make a query parameter required, you can just not declare any default value:
+from fastapi import FastAPI app = FastAPI () @app . get ( ""/items/ {item_id} "" ) async def read_user_item ( item_id : str , needy : str ): item = { ""item_id"" : item_id , ""needy"" : needy } return item
+from fastapi import FastAPI app = FastAPI () @app . get ( ""/items/ {item_id} "" ) async def read_user_item ( item_id : str , needy : str ): item = { ""item_id"" : item_id , ""needy"" : needy } return item
+Here the query parameter needy is a required query parameter of type str .
+needy
+str
+If you open in your browser a URL like:
+http://127.0.0.1:8000/items/foo-item
+http://127.0.0.1:8000/items/foo-item
+...without adding the required parameter needy , you will see an error like:
+needy
+{ ""detail"" : [ { ""type"" : ""missing"" , ""loc"" : [ ""query"" , ""needy"" ], ""msg"" : ""Field required"" , ""input"" : null } ] }
+
+[recursive-000226] Tip
+This is probably not as important or necessary if you use Annotated .
+Annotated
+Let's say that you want to declare the query parameter q as a required str .
+q
+str
+And you don't need to declare anything else for that parameter, so you don't really need to use Query .
+Query
+But you still need to use Path for the item_id path parameter. And you don't want to use Annotated for some reason.
+Path
+item_id
+Annotated
+Python will complain if you put a value with a ""default"" before a value that doesn't have a ""default"".
+But you can re-order them, and have the value without a default (the query parameter q ) first.
+q
+It doesn't matter for FastAPI . It will detect the parameters by their names, types and default declarations ( Query , Path , etc), it doesn't care about the order.
+Query
+Path
+So, you can declare your function as:
+from fastapi import FastAPI , Path app = FastAPI () @app . get ( ""/items/ {item_id} "" ) async def read_items ( q : str , item_id : int = Path ( title = ""The ID of the item to get"" )): results = { ""item_id"" : item_id } if q : results . update ({ ""q"" : q }) return results
+
+[recursive-000241] With Query , Path (and others you haven't seen yet) you can declare metadata and string validations in the same ways as with Query Parameters and String Validations .
+Query
+Path
+And you can also declare numeric validations:
+gt : g reater t han
+gt
+g
+t
+ge : g reater than or e qual
+ge
+g
+e
+lt : l ess t han
+lt
+l
+t
+le : l ess than or e qual
+le
+l
+e
+Note
+Query , Path , and other classes you will see later are subclasses of a common Param class.
+Query
+Path
+Param
+All of them share the same parameters for additional validation and metadata you have seen.
+Technical Details
+When you import Query , Path and others from fastapi , they are actually functions.
+Query
+Path
+fastapi
+That when called, return instances of classes of the same name.
+So, you import Query , which is a function. And when you call it, it returns an instance of a class also named Query .
+Query
+Query
+These functions are there (instead of just using the classes directly) so that your editor doesn't mark errors about their types.
+That way you can use your normal editor and coding tools without having to add custom configurations to disregard those errors.
+
+[recursive-000153] The same way, you can declare optional query parameters, by setting their default to None :
+None
+from fastapi import FastAPI app = FastAPI () @app . get ( ""/items/ {item_id} "" ) async def read_item ( item_id : str , q : str | None = None ): if q : return { ""item_id"" : item_id , ""q"" : q } return { ""item_id"" : item_id }
+from fastapi import FastAPI app = FastAPI () @app . get ( ""/items/ {item_id} "" ) async def read_item ( item_id : str , q : str | None = None ): if q : return { ""item_id"" : item_id , ""q"" : q } return { ""item_id"" : item_id }
+In this case, the function parameter q will be optional, and will be None by default.
+q
+None
+Tip
+Also notice that FastAPI is smart enough to notice that the path parameter item_id is a path parameter and q is not, so, it's a query parameter.
+item_id
+q
+
+[recursive-000150] When you declare other function parameters that are not part of the path parameters, they are automatically interpreted as ""query"" parameters.
+from fastapi import FastAPI app = FastAPI () fake_items_db = [{ ""item_name"" : ""Foo"" }, { ""item_name"" : ""Bar"" }, { ""item_name"" : ""Baz"" }] @app . get ( ""/items/"" ) async def read_item ( skip : int = 0 , limit : int = 10 ): return fake_items_db [ skip : skip + limit ]
+from fastapi import FastAPI app = FastAPI () fake_items_db = [{ ""item_name"" : ""Foo"" }, { ""item_name"" : ""Bar"" }, { ""item_name"" : ""Baz"" }] @app . get ( ""/items/"" ) async def read_item ( skip : int = 0 , limit : int = 10 ): return fake_items_db [ skip : skip + limit ]
+The query is the set of key-value pairs that go after the ? in a URL, separated by & characters.
+?
+&
+For example, in the URL:
+http://127.0.0.1:8000/items/?skip=0&limit=10
+http://127.0.0.1:8000/items/?skip=0&limit=10
+...the query parameters are:
+skip : with a value of 0
+skip
+0
+limit : with a value of 10
+limit
+10
+As they are part of the URL, they are ""naturally"" strings.
+But when you declare them with Python types (in the example above, as int ), they are converted to that type and validated against it.
+int","You make a query parameter required by not declaring a default value for it. In other words, you don't specify a default value for the query parameter, like this:
+
+```python
+from fastapi import FastAPI
+app = FastAPI()
+
+@app.get(""/items/{item_id}"")
+async def read_user_item(item_id: str, needy: str):
+    item = {""item_id"": item_id, ""needy"": needy}
+    return item
+```
+
+In this example, the `needy` query parameter is required because it doesn't have a default value. If you try to access the endpoint without providing a value for `needy`, you'll get an error.",,
+4,recursive__minilm__distilbert__plain,p3_q08,Why can changing a CPU tensor also change its associated NumPy array?,"CPU tensors and NumPy arrays can share the same underlying memory. When they share storage, changing one also changes the other.","[recursive-002839] Tensors on the CPU and NumPy arrays can share their underlying memory
+locations, and changing one will change the other.
+
+[recursive-002953] Tensors on the CPU and NumPy arrays can share their underlying memory
+locations, and changing one will change the other.
+
+[recursive-002840] t = torch . ones ( 5 ) print ( f ""t: { t } "" ) n = t . numpy () print ( f ""n: { n } "" )
+t: tensor([1., 1., 1., 1., 1.])
+n: [1. 1. 1. 1. 1.]
+A change in the tensor reflects in the NumPy array.
+t . add_ ( 1 ) print ( f ""t: { t } "" ) print ( f ""n: { n } "" )
+t: tensor([2., 2., 2., 2., 2.])
+n: [2. 2. 2. 2. 2.]
+
+[recursive-002954] t = torch . ones ( 5 ) print ( f ""t: { t } "" ) n = t . numpy () print ( f ""n: { n } "" )
+t: tensor([1., 1., 1., 1., 1.])
+n: [1. 1. 1. 1. 1.]
+A change in the tensor reflects in the NumPy array.
+t . add_ ( 1 ) print ( f ""t: { t } "" ) print ( f ""n: { n } "" )
+t: tensor([2., 2., 2., 2., 2.])
+n: [2. 2. 2. 2. 2.]
+
+[recursive-002841] n = np . ones ( 5 ) t = torch . from_numpy ( n )
+Changes in the NumPy array reflects in the tensor.
+np . add ( n , 1 , out = n ) print ( f ""t: { t } "" ) print ( f ""n: { n } "" )
+t: tensor([2., 2., 2., 2., 2.], dtype=torch.float64)
+n: [2. 2. 2. 2. 2.]
+Total running time of the script: (0 minutes 0.459 seconds)
+Download Jupyter notebook: tensorqs_tutorial.ipynb
+Download Jupyter notebook: tensorqs_tutorial.ipynb
+Download Python source code: tensorqs_tutorial.py
+Download Python source code: tensorqs_tutorial.py
+Download zipped: tensorqs_tutorial.zip
+Download zipped: tensorqs_tutorial.zip",Because they share the same underlying memory location.,,
+5,recursive__minilm__distilbert__grounded,p3_q05,Which argument must be passed to backward when several backward calls are needed on the same PyTorch computation graph?,Pass retain_graph=True to the backward call to retain the graph for repeated backward computations.,"[recursive-002736] to do several backward calls on the same graph, we need to pass retain_graph=True to the backward call.
+We can only perform gradient calculations using backward once on a given graph, for performance reasons. If we need
+to do several backward calls on the same graph, we need to pass retain_graph=True to the backward call.
+backward
+backward
+retain_graph=True
+backward
+
+[recursive-002741] Second call
+tensor([[8., 4., 4., 4., 4.],
+        [4., 8., 4., 4., 4.],
+        [4., 4., 8., 4., 4.],
+        [4., 4., 4., 8., 4.]])
+
+Call after zeroing gradients
+tensor([[4., 2., 2., 2., 2.],
+        [2., 4., 2., 2., 2.],
+        [2., 2., 4., 2., 2.],
+        [2., 2., 2., 4., 2.]])
+Notice that when we call backward for the second time with the same
+argument, the value of the gradient is different. This happens because
+when doing backward propagation, PyTorch accumulates the
+gradients , i.e. the value of computed gradients is added to the grad property of all leaf nodes of computational graph. If you want
+to compute the proper gradients, you need to zero out the grad property before. In real-life training an optimizer helps us to do
+this.
+backward
+backward
+grad
+grad
+Note
+Previously we were calling backward() function without
+parameters. This is essentially equivalent to calling backward(torch.tensor(1.0)) , which is a useful way to compute the
+gradients in case of a scalar-valued function, such as loss during
+neural network training.
+backward()
+backward(torch.tensor(1.0))
+
+[recursive-002735] To optimize weights of parameters in the neural network, we need to
+compute the derivatives of our loss function with respect to parameters,
+namely, we need \(\frac{\partial loss}{\partial w}\) and \(\frac{\partial loss}{\partial b}\) under some fixed values of x and y . To compute those derivatives, we call loss.backward() , and then retrieve the values from w.grad and b.grad :
+x
+y
+loss.backward()
+w.grad
+b.grad
+loss . backward () print ( w . grad ) print ( b . grad )
+tensor([[0.2752, 0.0590, 0.1873],
+        [0.2752, 0.0590, 0.1873],
+        [0.2752, 0.0590, 0.1873],
+        [0.2752, 0.0590, 0.1873],
+        [0.2752, 0.0590, 0.1873]])
+tensor([0.2752, 0.0590, 0.1873])
+Note
+We can only obtain the grad properties for the leaf
+nodes of the computational graph, which have requires_grad property
+set to True . For all other nodes in our graph, gradients will not be
+available.
+We can only obtain the grad properties for the leaf
+nodes of the computational graph, which have requires_grad property
+set to True . For all other nodes in our graph, gradients will not be
+available.
+grad
+requires_grad
+True
+We can only perform gradient calculations using backward once on a given graph, for performance reasons. If we need
+to do several backward calls on the same graph, we need to pass retain_graph=True to the backward call.
+We can only perform gradient calculations using backward once on a given graph, for performance reasons. If we need
+
+[recursive-002284] max performance out of each backend. For those operators you’ll see op_backward showing up in RegistrationDeclarations.h as required registration as well.
+RegistrationDeclarations.h
+Tensor my_op2_backward ( const Tensor & self , const Tensor & other ) { // call your backend-specific APIs to implement my_op2_backward so that // it matches PyTorch's native behavior } // Note backward kernel is still registered to PrivateUse1 instead of AutogradPrivateUse1. // PyTorch will wrap your backward kernel with proper autograd setup and then link to it in // my_op2's AutogradPrivateUse1 kernel. TORCH_LIBRARY_IMPL ( aten , PrivateUse1 , m ) { m . impl ( < schema_my_op2 > , & my_op2 ); m . impl ( < schema_my_op2_backward > , & my_op2_backward ); }
+In a few rare cases, PyTorch’s gradient formula for certain operators may have assumptions that don’t generalize
+for all backends. In those cases backend extenders can optionally override PyTorch Autograd layer by registering
+a kernel from torch::autograd::Function to the corresponding dispatch key (for example, AutogradPrivateUse1 if
+you’re using PrivateUse1 for your backend):
+
+[recursive-002283] Gradient formulas are mostly purely mathematical and thus are general for all backends.
+PyTorch often registers a kernel to alias dispatch key Autograd, which means it can be used by all backends.
+For these operators you don’t have to worry about their derivative formulas,
+you can just write forward definitions for operators in RegistrationDeclarations.h and PyTorch handles
+backward for you automatically.
+RegistrationDeclarations.h
+Tensor my_op1 ( const Tensor & self , const Tensor & other ) { // call your backend-specific APIs to implement my_op so that // it matches PyTorch's native behavior } TORCH_LIBRARY_IMPL ( aten , PrivateUse1 , m ) { m . impl ( < schema_my_op1 > , & my_op ); }
+In some cases, PyTorch backward kernel implementations are also device specific so that they can squeeze out
+max performance out of each backend. For those operators you’ll see op_backward showing up in RegistrationDeclarations.h as required registration as well.
+RegistrationDeclarations.h",retain_graph=True [recursive-002736],,
+6,recursive__minilm__distilbert__grounded,p2_q03,How do you declare and inject a shared dependency in a FastAPI path operation function?,"Similar to Body and Query, you use Depends with a new parameter in your path operation function, typically annotating it with Annotated and Depends(common_parameters).","[recursive-000589] Next we will see how to add dependencies to the whole FastAPI application, so that they apply to each path operation .
+FastAPI
+
+[recursive-000518] Depends()
+And that function takes parameters in the same way that path operation functions do.
+Tip
+You'll see what other ""things"", apart from functions, can be used as dependencies in the next chapter.
+Whenever a new request arrives, FastAPI will take care of:
+Calling your dependency (""dependable"") function with the correct parameters.
+Get the result from your function.
+Assign that result to the parameter in your path operation function .
+graph TB
+
+[recursive-000529] All these dependencies, while declaring their requirements, also add parameters, validations, etc. to your path operations .
+FastAPI will take care of adding it all to the OpenAPI schema, so that it is shown in the interactive documentation systems.
+
+[recursive-000509] ""Dependency Injection"" means, in programming, that there is a way for your code (in this case, your path operation functions ) to declare things that it requires to work and use: ""dependencies"".
+And then, that system (in this case FastAPI ) will take care of doing whatever is needed to provide your code with those needed dependencies (""inject"" the dependencies).
+This is very useful when you need to:
+Have shared logic (the same code logic again and again).
+Share database connections.
+Enforce security, authentication, role requirements, etc.
+And many other things...
+All these, while minimizing code repetition.
+
+[recursive-000519] common_parameters([""common_parameters""])
+read_items[""/items/""]
+read_users[""/users/""]
+
+common_parameters --> read_items
+common_parameters --> read_users
+graph TB
+
+common_parameters([""common_parameters""])
+read_items[""/items/""]
+read_users[""/users/""]
+
+common_parameters --> read_items
+common_parameters --> read_users
+This way you write shared code once and FastAPI takes care of calling it for your path operations .
+Tip
+Notice that you don't have to create a special class and pass it somewhere to FastAPI to ""register"" it or anything similar.
+You just pass it to Depends and FastAPI knows how to do the rest.
+Depends","You declare and inject a shared dependency in a FastAPI path operation function by using the `Depends()` function and passing the dependency as an argument, like this: `@app.get(""/items/"") def read_items: ... Depends(common_parameters)`.
+
+[recursive-000519] [recursive-000518] [recursive-000529] [recursive-000509]",,
+7,recursive__minilm__distilbert__plain,p1_q08,Why should /users/me be declared before /users/{user_id} in FastAPI?,"FastAPI evaluates path operations in declaration order. Declaring the fixed /users/me route first ensures it is matched before the parameterized /users/{user_id} route can interpret ""me"" as a user ID.","[recursive-000134] When creating path operations , you can find situations where you have a fixed path.
+Like /users/me , let's say that it's to get data about the current user.
+/users/me
+And then you can also have a path /users/{user_id} to get data about a specific user by some user ID.
+/users/{user_id}
+Because path operations are evaluated in order, you need to make sure that the path for /users/me is declared before the one for /users/{user_id} :
+/users/me
+/users/{user_id}
+from fastapi import FastAPI app = FastAPI () @app . get ( ""/users/me"" ) async def read_user_me (): return { ""user_id"" : ""the current user"" } @app . get ( ""/users/ {user_id} "" ) async def read_user ( user_id : str ): return { ""user_id"" : user_id }
+from fastapi import FastAPI app = FastAPI () @app . get ( ""/users/me"" ) async def read_user_me (): return { ""user_id"" : ""the current user"" } @app . get ( ""/users/ {user_id} "" ) async def read_user ( user_id : str ): return { ""user_id"" : user_id }
+Otherwise, the path for /users/{user_id} would match also for /users/me , ""thinking"" that it's receiving a parameter user_id with a value of ""me"" .
+/users/{user_id}
+/users/me
+user_id
+""me""
+Similarly, you cannot redefine a path operation:
+
+[recursive-000135] /users/{user_id}
+/users/me
+user_id
+""me""
+Similarly, you cannot redefine a path operation:
+from fastapi import FastAPI app = FastAPI () @app . get ( ""/users"" ) async def read_users (): return [ ""Rick"" , ""Morty"" ] @app . get ( ""/users"" ) async def read_users2 (): return [ ""Bean"" , ""Elfo"" ]
+from fastapi import FastAPI app = FastAPI () @app . get ( ""/users"" ) async def read_users (): return [ ""Rick"" , ""Morty"" ] @app . get ( ""/users"" ) async def read_users2 (): return [ ""Bean"" , ""Elfo"" ]
+The first one will always be used since the path matches first.
+
+[recursive-001855] Up to now, you have been declaring the parts of the request that you need with their types.
+Taking data from:
+The path as parameters.
+Headers.
+Cookies.
+etc.
+And by doing so, FastAPI is validating that data, converting it and generating documentation for your API automatically.
+But there are situations where you might need to access the Request object directly.
+Request
+
+[recursive-001124] APIRouter
+Let's say the file dedicated to handling just users is the submodule at /app/routers/users.py .
+/app/routers/users.py
+You want to have the path operations related to your users separated from the rest of the code, to keep it organized.
+But it's still part of the same FastAPI application/web API (it's part of the same ""Python Package"").
+You can create the path operations for that module using APIRouter .
+APIRouter
+
+[recursive-001126] APIRouter
+And then you use it to declare your path operations .
+Use it the same way you would use the FastAPI class:
+FastAPI
+from fastapi import APIRouter router = APIRouter () @router . get ( ""/users/"" , tags = [ ""users"" ]) async def read_users (): return [{ ""username"" : ""Rick"" }, { ""username"" : ""Morty"" }] @router . get ( ""/users/me"" , tags = [ ""users"" ]) async def read_user_me (): return { ""username"" : ""fakecurrentuser"" } @router . get ( ""/users/ {username} "" , tags = [ ""users"" ]) async def read_user ( username : str ): return { ""username"" : username }
+from fastapi import APIRouter router = APIRouter () @router . get ( ""/users/"" , tags = [ ""users"" ]) async def read_users (): return [{ ""username"" : ""Rick"" }, { ""username"" : ""Morty"" }] @router . get ( ""/users/me"" , tags = [ ""users"" ]) async def read_user_me (): return { ""username"" : ""fakecurrentuser"" } @router . get ( ""/users/ {username} "" , tags = [ ""users"" ]) async def read_user ( username : str ): return { ""username"" : username }
+You can think of APIRouter as a ""mini FastAPI "" class.
+APIRouter
+FastAPI
+All the same options are supported.","In FastAPI, path operations are evaluated in order, which means that the path operation declared first will be used first. This is because the path operation is matched against the URL path, and the first match is used.
+
+In the case of the path operations /users/me and /users/{user_id}, the path operation /users/me should be declared before /users/{user_id} because it is a more specific match. If /users/me is declared after /users/{user_id}, the path operation /users/{user_id} would match the URL path /users/me, and the path operation /users/me would not be used.
+
+For example, if the URL path is /users/me, the path operation /users/{user_id} would match the URL path and return the value of the user_id parameter, which would be ""me"". But if /users/me is declared first, the path operation /users/me would match the URL path and return the expected result, which is the data about the current user.
+
+Therefore, it is recommended to declare /users/me before /users/{user_id} in FastAPI to ensure that the more specific path operation is used first.",,
+8,recursive__bge__distilbert_bm25__grounded,p2_q07,What differentiation engine does PyTorch provide to compute gradients during backpropagation?,PyTorch provides a built-in differentiation engine named torch.autograd that automatically computes gradients for any computational graph.,"[recursive-002733] torch.autograd
+Created On: Feb 10, 2021 | Last Updated: Jan 16, 2024 | Last Verified: Nov 05, 2024
+When training neural networks, the most frequently used algorithm is back propagation . In this algorithm, parameters (model weights) are
+adjusted according to the gradient of the loss function with respect
+to the given parameter.
+To compute those gradients, PyTorch has a built-in differentiation engine
+called torch.autograd . It supports automatic computation of gradient for any
+computational graph.
+torch.autograd
+Consider the simplest one-layer neural network, with input x ,
+parameters w and b , and some loss function. It can be defined in
+PyTorch in the following manner:
+x
+w
+b
+import torch x = torch . ones ( 5 ) # input tensor y = torch . zeros ( 3 ) # expected output w = torch . randn ( 5 , 3 , requires_grad = True ) b = torch . randn ( 3 , requires_grad = True ) z = torch . matmul ( x , w ) + b loss = torch . nn . functional . binary_cross_entropy_with_logits ( z , y )
+
+[recursive-002741] Second call
+tensor([[8., 4., 4., 4., 4.],
+        [4., 8., 4., 4., 4.],
+        [4., 4., 8., 4., 4.],
+        [4., 4., 4., 8., 4.]])
+
+Call after zeroing gradients
+tensor([[4., 2., 2., 2., 2.],
+        [2., 4., 2., 2., 2.],
+        [2., 2., 4., 2., 2.],
+        [2., 2., 2., 4., 2.]])
+Notice that when we call backward for the second time with the same
+argument, the value of the gradient is different. This happens because
+when doing backward propagation, PyTorch accumulates the
+gradients , i.e. the value of computed gradients is added to the grad property of all leaf nodes of computational graph. If you want
+to compute the proper gradients, you need to zero out the grad property before. In real-life training an optimizer helps us to do
+this.
+backward
+backward
+grad
+grad
+Note
+Previously we were calling backward() function without
+parameters. This is essentially equivalent to calling backward(torch.tensor(1.0)) , which is a useful way to compute the
+gradients in case of a scalar-valued function, such as loss during
+neural network training.
+backward()
+backward(torch.tensor(1.0))
+
+[recursive-003441] import torch import math # We want to be able to train our model on an `accelerator <https://pytorch.org/docs/stable/torch.html#accelerators>`__ # such as CUDA, MPS, MTIA, or XPU. If the current accelerator is available, we will use it. Otherwise, we use the CPU. dtype = torch . float device = torch . accelerator . current_accelerator () . type if torch . accelerator . is_available () else ""cpu"" print ( f ""Using { device } device"" ) torch . set_default_device ( device ) # Create Tensors to hold input and outputs. # By default, requires_grad=False, which indicates that we do not need to # compute gradients with respect to these Tensors during the backward pass. x = torch . linspace ( - 1 , 1 , 2000 , dtype = dtype ) y = torch . exp ( x ) # A Taylor expansion would be 1 + x + (1/2) x**2 + (1/3!) x**3 + ... # Create random Tensors for weights. For a third order polynomial, we need # 4 weights: y = a + b x + c x^2 + d x^3 # Setting requires_grad=True indicates that we want to compute gradients with # respect to these Tensors during the backward pass. a = torch . randn ((), dtype = dtype , requires_grad = True ) b = torch . randn ((), dtype = dtype , requires_grad = True ) c = torch . randn ((), dtype = dtype , requires_grad = True ) d = torch
+
+[recursive-002738] Conceptually, autograd keeps a record of data (tensors) and all executed
+operations (along with the resulting new tensors) in a directed acyclic
+graph (DAG) consisting of Function objects. In this DAG, leaves are the input tensors, roots are the output
+tensors. By tracing this graph from roots to leaves, you can
+automatically compute the gradients using the chain rule.
+In a forward pass, autograd does two things simultaneously:
+run the requested operation to compute a resulting tensor
+run the requested operation to compute a resulting tensor
+maintain the operation’s gradient function in the DAG.
+maintain the operation’s gradient function in the DAG.
+The backward pass kicks off when .backward() is called on the DAG
+root. autograd then:
+.backward()
+autograd
+computes the gradients from each .grad_fn ,
+computes the gradients from each .grad_fn ,
+.grad_fn
+accumulates them in the respective tensor’s .grad attribute
+accumulates them in the respective tensor’s .grad attribute
+.grad
+using the chain rule, propagates all the way to the leaf tensors.
+using the chain rule, propagates all the way to the leaf tensors.
+Note
+DAGs are dynamic in PyTorch An important thing to note is that the graph is recreated from scratch; after each .backward() call, autograd starts populating a new graph. This is
+exactly what allows you to use control flow statements in your model;
+you can change the shape, size and operations at every iteration if
+needed.
+.backward()
+
+[recursive-003012] Calculate and accumulate loss.
+Calculate and accumulate loss.
+Perform backpropagation.
+Perform backpropagation.
+Clip gradients.
+Clip gradients.
+Update encoder and decoder model parameters.
+Update encoder and decoder model parameters.
+Note
+PyTorch’s RNN modules ( RNN , LSTM , GRU ) can be used like any
+other non-recurrent layers by simply passing them the entire input
+sequence (or batch of sequences). We use the GRU layer like this in
+the encoder . The reality is that under the hood, there is an
+iterative process looping over each time step calculating hidden states.
+Alternatively, you can run these modules one time-step at a time. In
+this case, we manually loop over the sequences during the training
+process like we must do for the decoder model. As long as you
+maintain the correct conceptual model of these modules, implementing
+sequential models can be very straightforward.
+RNN
+LSTM
+GRU
+GRU
+encoder
+decoder",[torch.autograd],,
+9,recursive__minilm__distilbert__plain,p1_q06,How do you make a query parameter required in a FastAPI path operation function?,Declare the query parameter in the function signature without a default value.,"[recursive-000157] When you declare a default value for non-path parameters (for now, we have only seen query parameters), then it is not required.
+If you don't want to add a specific value but just make it optional, set the default as None .
+None
+But when you want to make a query parameter required, you can just not declare any default value:
+from fastapi import FastAPI app = FastAPI () @app . get ( ""/items/ {item_id} "" ) async def read_user_item ( item_id : str , needy : str ): item = { ""item_id"" : item_id , ""needy"" : needy } return item
+from fastapi import FastAPI app = FastAPI () @app . get ( ""/items/ {item_id} "" ) async def read_user_item ( item_id : str , needy : str ): item = { ""item_id"" : item_id , ""needy"" : needy } return item
+Here the query parameter needy is a required query parameter of type str .
+needy
+str
+If you open in your browser a URL like:
+http://127.0.0.1:8000/items/foo-item
+http://127.0.0.1:8000/items/foo-item
+...without adding the required parameter needy , you will see an error like:
+needy
+{ ""detail"" : [ { ""type"" : ""missing"" , ""loc"" : [ ""query"" , ""needy"" ], ""msg"" : ""Field required"" , ""input"" : null } ] }
+
+[recursive-000226] Tip
+This is probably not as important or necessary if you use Annotated .
+Annotated
+Let's say that you want to declare the query parameter q as a required str .
+q
+str
+And you don't need to declare anything else for that parameter, so you don't really need to use Query .
+Query
+But you still need to use Path for the item_id path parameter. And you don't want to use Annotated for some reason.
+Path
+item_id
+Annotated
+Python will complain if you put a value with a ""default"" before a value that doesn't have a ""default"".
+But you can re-order them, and have the value without a default (the query parameter q ) first.
+q
+It doesn't matter for FastAPI . It will detect the parameters by their names, types and default declarations ( Query , Path , etc), it doesn't care about the order.
+Query
+Path
+So, you can declare your function as:
+from fastapi import FastAPI , Path app = FastAPI () @app . get ( ""/items/ {item_id} "" ) async def read_items ( q : str , item_id : int = Path ( title = ""The ID of the item to get"" )): results = { ""item_id"" : item_id } if q : results . update ({ ""q"" : q }) return results
+
+[recursive-000266] You can add multiple body parameters to your path operation function , even though a request can only have a single body.
+But FastAPI will handle it, give you the correct data in your function, and validate and document the correct schema in the path operation .
+You can also declare singular values to be received as part of the body.
+And you can instruct FastAPI to embed the body in a key even when there is only a single parameter declared.
+
+[recursive-000147] OpenAPI doesn't support a way to declare a path parameter to contain a path inside, as that could lead to scenarios that are difficult to test and define.
+Nevertheless, you can still do it in FastAPI , using one of the internal tools from Starlette.
+And the docs would still work, although not adding any documentation telling that the parameter should contain a path.
+
+[recursive-000241] With Query , Path (and others you haven't seen yet) you can declare metadata and string validations in the same ways as with Query Parameters and String Validations .
+Query
+Path
+And you can also declare numeric validations:
+gt : g reater t han
+gt
+g
+t
+ge : g reater than or e qual
+ge
+g
+e
+lt : l ess t han
+lt
+l
+t
+le : l ess than or e qual
+le
+l
+e
+Note
+Query , Path , and other classes you will see later are subclasses of a common Param class.
+Query
+Path
+Param
+All of them share the same parameters for additional validation and metadata you have seen.
+Technical Details
+When you import Query , Path and others from fastapi , they are actually functions.
+Query
+Path
+fastapi
+That when called, return instances of classes of the same name.
+So, you import Query , which is a function. And when you call it, it returns an instance of a class also named Query .
+Query
+Query
+These functions are there (instead of just using the classes directly) so that your editor doesn't mark errors about their types.
+That way you can use your normal editor and coding tools without having to add custom configurations to disregard those errors.","You can make a query parameter required in a FastAPI path operation function by not declaring a default value for that parameter. In other words, you can simply declare the parameter without a default value, like this:
+
+```python
+from fastapi import FastAPI, Query
+
+app = FastAPI()
+
+@app.get(""/items/{item_id}"")
+async def read_items(q: str = Query(None), item_id: int = Query(None)):
+    results = {""item_id"": item_id}
+    if q:
+        results.update({""q"": q})
+    return results
+```
+
+In this example, the `q` parameter is declared without a default value, which means it is required. If you try to make a request to this endpoint without providing a value for `q`, you will see an error.",,
+10,recursive__bge__distilbert_bm25__grounded,p3_q04,What is the internal dictionary containing a PyTorch model's learned parameters called?,The internal state dictionary containing the learned parameters is called state_dict.,"[recursive-002819] PyTorch models store the learned parameters in an internal
+state dictionary, called state_dict . These can be persisted via the torch.save method:
+state_dict
+torch.save
+model = models . vgg16 ( weights = 'IMAGENET1K_V1' ) torch . save ( model . state_dict (), 'model_weights.pth' )
+Downloading: ""https://download.pytorch.org/models/vgg16-397923af.pth"" to /var/lib/ci-user/.cache/torch/hub/checkpoints/vgg16-397923af.pth
+
+[recursive-002815] A common way to save a model is to serialize the internal state dictionary (containing the model parameters).
+torch . save ( model . state_dict (), ""model.pth"" ) print ( ""Saved PyTorch Model State to model.pth"" )
+Saved PyTorch Model State to model.pth
+
+[recursive-003467] . loss_fn = torch . nn . MSELoss ( reduction = 'sum' ) learning_rate = 1e-6 for t in range ( 2000 ): # Forward pass: compute predicted y by passing x to the model. Module objects # override the __call__ operator so you can call them like functions. When # doing so you pass a Tensor of input data to the Module and it produces # a Tensor of output data. y_pred = model ( xx ) # Compute and print loss. We pass Tensors containing the predicted and true # values of y, and the loss function returns a Tensor containing the # loss. loss = loss_fn ( y_pred , y ) if t % 100 == 99 : print ( t , loss . item ()) # Zero the gradients before running the backward pass. model . zero_grad () # Backward pass: compute gradient of the loss with respect to all the learnable # parameters of the model. Internally, the parameters of each Module are stored # in Tensors with requires_grad=True, so this call will compute gradients for # all learnable parameters in the model. loss . backward () # Update the weights using gradient descent. Each parameter is a Tensor, so # we can access its gradients like we did before. with torch . no_grad (): for param in model . parameters (): param -= learning_rate * param . grad # You can access the first layer of `model` like accessing the first item of a list linear_layer = model [ 0 ] # For linear layer, its parameters are stored as `weight` and `bias`. print ( f 'Result: y = { linear_layer . bias . item () } + { linear_layer . weight [:, 0 ] . item () } x + { linear_layer
+
+[recursive-002788] Optimization is the process of adjusting model parameters to reduce model error in each training step. Optimization algorithms define how this process is performed (in this example we use Stochastic Gradient Descent).
+All optimization logic is encapsulated in  the optimizer object. Here, we use the SGD optimizer; additionally, there are many different optimizers available in PyTorch such as ADAM and RMSProp, that work better for different kinds of models and data.
+optimizer
+We initialize the optimizer by registering the model’s parameters that need to be trained, and passing in the learning rate hyperparameter.
+optimizer = torch . optim . SGD ( model . parameters (), lr = learning_rate )
+Inside the training loop, optimization happens in three steps:
+Call optimizer.zero_grad() to reset the gradients of model parameters. Gradients by default add up; to prevent double-counting, we explicitly zero them at each iteration.
+Call optimizer.zero_grad() to reset the gradients of model parameters. Gradients by default add up; to prevent double-counting, we explicitly zero them at each iteration.
+optimizer.zero_grad()
+Backpropagate the prediction loss with a call to loss.backward() . PyTorch deposits the gradients of the loss w.r.t. each parameter.
+Backpropagate the prediction loss with a call to loss.backward() . PyTorch deposits the gradients of the loss w.r.t. each parameter.
+loss.backward()
+Once we have our gradients, we call optimizer.step() to adjust the parameters by the gradients collected in the backward pass.
+Once we have our gradients, we call optimizer.step() to adjust the parameters by the gradients collected in the backward pass.
+
+[recursive-002774] Building the Neural Network https://pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html
+autogradqs_tutorial.py Automatic Differentiation with torch.autograd_tutorial https://pytorch.org/tutorials/beginner/basics/autograd_tutorial.html
+Automatic Differentiation with torch.autograd_tutorial https://pytorch.org/tutorials/beginner/basics/autograd_tutorial.html
+optimization_tutorial.py Optimizing Model Parameters https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html
+Optimizing Model Parameters https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html
+saveloadrun_tutorial.py Save and Load the Model https://pytorch.org/tutorials/beginner/basics/saveloadrun_tutorial.html
+Save and Load the Model https://pytorch.org/tutorials/beginner/basics/saveloadrun_tutorial.html
+sphx_glr_beginner_basics_intro.py
+sphx_glr_beginner_basics_saveloadrun_tutorial.py
+sphx_glr_beginner_basics_transforms_tutorial.py
+sphx_glr_beginner_basics_autogradqs_tutorial.py
+sphx_glr_beginner_basics_buildmodel_tutorial.py
+sphx_glr_beginner_basics_tensorqs_tutorial.py
+sphx_glr_beginner_basics_data_tutorial.py",state_dict [recursive-002819],,

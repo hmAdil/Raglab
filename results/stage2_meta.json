@@ -1,0 +1,23 @@
+{
+  "generator_model": "llama3.2:3b",
+  "judge_model": "qwen2.5:7b",
+  "date": "2026-11-14",
+  "constants": {
+    "seed": 42,
+    "top_k": 5,
+    "candidate_depth": 20,
+    "rrf_k": 60,
+    "top_configs_for_stage2": 3,
+    "tokenizer_name": "bert-base-uncased",
+    "max_chunk_tokens": 400,
+    "fixed_overlap_tokens": 50,
+    "recursive_overlap_tokens": 50,
+    "sentences_per_chunk": 5,
+    "semantic_percentile": 20,
+    "semantic_split_model": "sentence-transformers/all-mpnet-base-v2",
+    "embedder_max_seq": 512,
+    "gen_num_ctx": 8192,
+    "gen_max_tokens": 400,
+    "judge_max_tokens": 300
+  }
+}

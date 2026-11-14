@@ -1,0 +1,4 @@
+criterion,run_id,groundedness,correctness,total_latency_ms,note
+best_accuracy,recursive__bge__distilbert_bm25__grounded,4.963,4.963,3518.8300000000004,"highest correctness, ties broken by groundedness"
+best_speed,recursive__bge__distilbert_bm25__grounded,4.963,4.963,3518.8300000000004,lowest retrieval plus generation latency
+best_balance,recursive__bge__distilbert_bm25__grounded,4.963,4.963,3518.8300000000004,max of min-max correctness minus min-max total latency over the runs

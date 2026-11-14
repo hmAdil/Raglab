@@ -1,0 +1,7 @@
+run_id,config_id,prompt_style,n_answerable,n_unanswerable,groundedness,correctness,refusal_accuracy,retrieval_latency_ms,generation_latency_ms,prompt_tokens,completion_tokens
+recursive__minilm__distilbert__plain,recursive__minilm__distilbert,plain,27,3,4.9630,4.8519,1.0000,33.51,4260.33,1072.7,100.8
+recursive__minilm__distilbert__grounded,recursive__minilm__distilbert,grounded,27,3,5.0000,4.5926,1.0000,33.51,3541.18,1112.7,60.0
+recursive__bge__distilbert__plain,recursive__bge__distilbert,plain,27,3,4.9630,4.8519,1.0000,18.79,4109.58,1158.5,96.8
+recursive__bge__distilbert__grounded,recursive__bge__distilbert,grounded,27,3,5.0000,4.5926,1.0000,18.79,3506.84,1198.5,56.8
+recursive__bge__distilbert_bm25__plain,recursive__bge__distilbert_bm25,plain,27,3,5.0000,4.8519,1.0000,26.51,4034.78,1232.4,92.9
+recursive__bge__distilbert_bm25__grounded,recursive__bge__distilbert_bm25,grounded,27,3,4.9630,4.9630,1.0000,26.51,3492.32,1272.4,55.4

@@ -51,7 +51,7 @@ The end-to-end evaluation pipeline operates in two stages:
     └── 5. Generator (Stage 2):
            - Plain prompt or Grounded prompt
            - LLM Generator (local Ollama llama3.2:3b)
-           - LLM Judge (stronger evaluation model via OpenAI-compatible API)
+           - LLM Judge (local qwen2.5:7b through Ollama's OpenAI-compatible API)
 ```
 
 - **Stage 1 (Retrieval Evaluation):** Evaluates all 32 combinations (4 chunkers × 2 embedders × 4 retrieval setups) over the answerable questions using deterministic character-overlap metrics against gold spans. Selects the top 3 configurations.
@@ -115,9 +115,15 @@ $env:GEN_BASE_URL = "http://localhost:11434"
 $env:GEN_MODEL = "llama3.2:3b"
 
 # LLM Judge settings (OpenAI-compatible endpoint, stronger model)
-$env:JUDGE_BASE_URL = "https://<provider-host>/v1"
-$env:JUDGE_API_KEY = "<your-api-key>"
-$env:JUDGE_MODEL = "<stronger-model-name>"
+# Used for the reported results: local qwen2.5:7b served by Ollama (no real key needed)
+$env:JUDGE_BASE_URL = "http://localhost:11434/v1"
+$env:JUDGE_API_KEY = "ollama"
+$env:JUDGE_MODEL = "qwen2.5:7b"
+
+# To use a hosted judge instead, point the same three variables at any OpenAI-compatible provider:
+# $env:JUDGE_BASE_URL = "https://<provider-host>/v1"
+# $env:JUDGE_API_KEY = "<your-api-key>"
+# $env:JUDGE_MODEL = "<stronger-model-name>"
 ```
 
 *Note: Never hardcode or commit API keys into source files, git commits, or results files.*
@@ -156,10 +162,13 @@ Stage 1 produces:
 - `results/top3.json` (top 3 selected configurations sorted by recall, precision, latency)
 
 ### Stage 2: Generation, Judging, and Experimentation
-Ensure Ollama is running and the model is downloaded:
+Ensure Ollama is running and both models are downloaded:
 ```powershell
 ollama pull llama3.2:3b
+ollama pull qwen2.5:7b
 ```
+
+The runner generates every answer first, then judges every answer. On a 6 GB GPU the 3B generator and 7B judge cannot be loaded together, and interleaving them made Ollama reload a model on every call, which inflated `generation_ms` by about 4 seconds per answer. Generation therefore runs with the generator loaded and a warm-up call before timing starts.
 
 Run Stage 2:
 ```powershell
@@ -223,3 +232,5 @@ Launches the Gradio interface on `http://127.0.0.1:7860` with Playground, Leader
 3. **Refusal Granularity:** With 3 unanswerable test questions, refusal accuracy operates in steps of 33.3 percentage points.
 4. **Input Length Constraints:** Small embedding models default to smaller sequence windows (MiniLM defaults to 256; raised to 512). Chunks up to 400 tokens fit comfortably without silent truncation.
 5. **LLM Judge Biases:** Automated judge scoring exhibits known verbosity and self-enhancement biases. Pointwise 1–5 scoring with strict rubrics and sample manual validation provides empirical quality assurance.
+6. **Local Judge:** The judge is a 7B open model (qwen2.5:7b) running locally, which is stronger than the 3B generator and from a different model family, but weaker than hosted frontier judges. Its scores are indicative, and the manual validation sample shows how far they can be trusted.
+7. **Latency Measurement:** Generation latency is measured on a single laptop GPU (RTX 3050, 6 GB) with the generator already loaded. Cached LLM calls replay their stored latency by design.

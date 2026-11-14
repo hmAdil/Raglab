@@ -9,6 +9,7 @@ from typing import Any
 
 from generator import generate
 from judge import judge_answerable, judge_refusal
+from llm_client import ollama_chat
 from oracle_retriever import OracleRetriever
 from prompts import format_context
 
@@ -239,6 +240,9 @@ def run_stage2(
 
     oracle_retriever: OracleRetriever | None = None
     chunk_caches: dict[str, dict[str, dict[str, Any]]] = {}
+    pending: list[dict[str, Any]] = []
+
+    ollama_chat("Reply with the single word: ready")
 
     for cfg in configs:
         if cfg == "oracle":
@@ -294,40 +298,57 @@ def run_stage2(
                     continue
 
                 gen_res = generate(style, q_text, chunks)
-                answer = gen_res["answer"]
-                ctx_text = format_context(chunks)
-
-                if is_ans:
-                    ref_ans = q.get("reference_answer", "")
-                    judge_res = judge_answerable(q_text, ref_ans, ctx_text, answer)
-                else:
-                    judge_res = judge_refusal(q_text, answer)
-
-                judge_err = judge_res.get("judge_error")
-                if judge_err:
-                    judge_obj = None
-                else:
-                    judge_obj = {k: v for k, v in judge_res.items() if k != "judge_error"}
-
-                record = {
+                pending.append({
                     "run_id": run_id,
-                    "config_id": cfg,
-                    "prompt_style": style,
-                    "question_id": qid,
-                    "answerable": is_ans,
-                    "answer": answer,
-                    "retrieved_chunk_ids": [h.chunk_id for h in hits],
-                    "retrieval_ms": float(retrieval_ms),
-                    "generation_ms": float(gen_res["generation_ms"]),
-                    "prompt_tokens": int(gen_res["prompt_tokens"]),
-                    "completion_tokens": int(gen_res["completion_tokens"]),
-                    "judge": judge_obj,
-                    "judge_error": judge_err,
-                }
+                    "cfg": cfg,
+                    "style": style,
+                    "q": q,
+                    "hits": hits,
+                    "retrieval_ms": retrieval_ms,
+                    "ctx_text": format_context(chunks),
+                    "gen_res": gen_res,
+                })
 
-                with open(runs_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(record) + "\n")
-                completed_keys.add((run_id, qid))
+    print(f"Generation phase done: {len(pending)} answers. Judging phase starting.")
+
+    for item in pending:
+        q = item["q"]
+        qid = q["id"]
+        q_text = q["question"]
+        is_ans = bool(q.get("answerable", True))
+        answer = item["gen_res"]["answer"]
+
+        if is_ans:
+            ref_ans = q.get("reference_answer", "")
+            judge_res = judge_answerable(q_text, ref_ans, item["ctx_text"], answer)
+        else:
+            judge_res = judge_refusal(q_text, answer)
+
+        judge_err = judge_res.get("judge_error")
+        if judge_err:
+            judge_obj = None
+        else:
+            judge_obj = {k: v for k, v in judge_res.items() if k != "judge_error"}
+
+        record = {
+            "run_id": item["run_id"],
+            "config_id": item["cfg"],
+            "prompt_style": item["style"],
+            "question_id": qid,
+            "answerable": is_ans,
+            "answer": answer,
+            "retrieved_chunk_ids": [h.chunk_id for h in item["hits"]],
+            "retrieval_ms": float(item["retrieval_ms"]),
+            "generation_ms": float(item["gen_res"]["generation_ms"]),
+            "prompt_tokens": int(item["gen_res"]["prompt_tokens"]),
+            "completion_tokens": int(item["gen_res"]["completion_tokens"]),
+            "judge": judge_obj,
+            "judge_error": judge_err,
+        }
+
+        with open(runs_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
+        completed_keys.add((item["run_id"], qid))
 
     errors = _aggregate_and_write_csv(runs_path, csv_path)
     _write_metadata()

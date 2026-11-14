@@ -1,0 +1,178 @@
+/* RAGLab UI skin v3: dark, frosted glass, gradient used sparingly (title, button, bars, badges).
+   Motion is driven by raglab.js (anime.js v4). Earlier flat-light version: _versions/v2-flat-light/ */
+:root {
+  --rl-bg: #0e1120;
+  --rl-glass: rgba(255, 255, 255, 0.05);
+  --rl-glass-hi: rgba(255, 255, 255, 0.085);
+  --rl-border: rgba(255, 255, 255, 0.11);
+  --rl-text: #eceef8;
+  --rl-dim: #98a0bd;
+  --rl-lilac: #b9a6ff;
+  --rl-ok: #4ec38a;
+  --rl-bad: #f08a7c;
+  --rl-grad: linear-gradient(110deg, #7dc4f5, #a78bfa 55%, #e879b9);
+  --rl-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+/* one soft static colour wash gives the glass something to frost; no moving orbs or dot grid */
+html, body, gradio-app {
+  background:
+    radial-gradient(900px 520px at 12% -8%, rgba(124, 92, 255, .22), transparent 62%),
+    radial-gradient(820px 500px at 92% 6%, rgba(232, 121, 185, .14), transparent 62%),
+    var(--rl-bg) fixed !important;
+  color: var(--rl-text);
+}
+.gradio-container {
+  background: transparent !important; width: min(1120px, 100%) !important; max-width: 1120px !important;
+  margin: 0 auto !important; box-sizing: border-box; font-family: "Segoe UI", system-ui, sans-serif !important;
+}
+.gradio-container .main, .gradio-container .wrap, .gradio-container .contain { width: 100% !important; max-width: 100% !important; }
+footer { display: none !important; }
+.rl-html, .rl-html > *, .tabitem, [role="tabpanel"] { min-width: 0 !important; max-width: 100% !important; }
+
+/* ---------- header ---------- */
+.rl-hero { padding: 40px 4px 22px; }
+.rl-eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--rl-dim); margin: 0 0 8px; }
+.rl-title {
+  font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-size: 58px; line-height: 1.04;
+  letter-spacing: -.01em; margin: 0 0 10px; color: var(--rl-text); border: none !important;
+}
+.rl-title .ch {
+  display: inline-block;
+  background-image: var(--rl-grad) !important; background-color: transparent !important;
+  -webkit-background-clip: text !important; background-clip: text !important;
+  -webkit-text-fill-color: transparent !important; color: transparent !important;
+}
+.rl-sub { max-width: 640px; margin: 0; color: var(--rl-dim); font-size: 15.5px; line-height: 1.55; }
+.rl-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+.rl-stat {
+  min-width: 128px; padding: 12px 18px; border-radius: 12px; border: 1px solid var(--rl-border);
+  background: var(--rl-glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.rl-stat b { display: block; font-size: 25px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--rl-text); }
+.rl-stat span { font-size: 12px; color: var(--rl-dim); }
+
+/* ---------- tabs ---------- */
+.tab-wrapper, .tab-container { border: none !important; }
+button[role="tab"] { color: var(--rl-dim) !important; font-weight: 600 !important; font-size: 15px !important; background: transparent !important; }
+button[role="tab"]:hover, button[role="tab"][aria-selected="true"] { color: var(--rl-text) !important; }
+button[role="tab"][aria-selected="true"]::after { background: var(--rl-grad) !important; height: 3px !important; border-radius: 3px; }
+
+/* ---------- glass panels / inputs ---------- */
+/* No backdrop-filter on Gradio's own panels: it would become the containing block for the dropdown
+   list (position: fixed) and push the list away from its field. Frost is kept on the custom cards. */
+.block, .form {
+  background: var(--rl-glass) !important; border-color: var(--rl-border) !important; border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.form .block { background: transparent !important; border: none !important; }
+label span, .block-label, .block-title { color: var(--rl-dim) !important; }
+input, textarea { background: rgba(0, 0, 0, .26) !important; color: var(--rl-text) !important; border-color: var(--rl-border) !important; }
+textarea:focus, input:focus { border-color: var(--rl-lilac) !important; box-shadow: 0 0 0 2px rgba(167, 139, 250, .22) !important; }
+.rl-html, .rl-html.block { background: transparent !important; border: none !important; padding: 0 !important; backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* dropdowns read as real selects: pointer cursor, clear chevron, solid option list */
+.rl-dd input { cursor: pointer !important; caret-color: transparent; }
+.rl-dd input:focus { box-shadow: none !important; border-color: transparent !important; }
+.rl-dd .wrap-inner { cursor: pointer; border: 1px solid var(--rl-border) !important; border-radius: 8px; background: rgba(0, 0, 0, .26) !important; }
+.rl-dd svg { color: var(--rl-text) !important; width: 16px; height: 16px; opacity: 1 !important; }
+ul.options, [role="listbox"] {
+  background: #181c32 !important; border: 1px solid var(--rl-border) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .5) !important; z-index: 50 !important;
+}
+[role="option"] { color: var(--rl-text) !important; }
+[role="option"]:hover, [role="option"].active { background: rgba(167, 139, 250, .18) !important; }
+
+#rl-ask { background: var(--rl-grad) !important; border: none !important; color: #12142a !important; font-weight: 700 !important; font-size: 16px !important; border-radius: 10px !important; }
+#rl-ask:hover { filter: brightness(1.08); }
+
+/* ---------- pipeline strip ---------- */
+.rl-pipe { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 14px 0 4px; }
+.rl-node {
+  padding: 9px 15px; border: 1px solid var(--rl-border); border-radius: 10px; min-width: 104px;
+  background: var(--rl-glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.rl-node small { display: block; font-size: 10px; letter-spacing: .12em; color: var(--rl-dim); text-transform: uppercase; }
+.rl-node em { font-style: normal; font-weight: 600; font-size: 14px; }
+.rl-arrow { color: var(--rl-dim); }
+.rl-node.on { border-color: var(--rl-lilac); background: rgba(167, 139, 250, .16); }
+.rl-node.done { border-color: var(--rl-ok); }
+
+/* ---------- passages ---------- */
+.rl-hits { display: grid; gap: 10px; }
+.rl-hit {
+  display: grid; grid-template-columns: 34px 1fr; gap: 14px; padding: 14px 16px; border-radius: 12px;
+  background: var(--rl-glass); border: 1px solid var(--rl-border); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: border-color .2s, background .2s;
+}
+.rl-hit:hover { border-color: rgba(167, 139, 250, .55); background: var(--rl-glass-hi); }
+.rl-rank { font-family: Georgia, serif; font-size: 26px; font-weight: 700; color: var(--rl-lilac); line-height: 1; }
+.rl-hit-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+.rl-tag { font-size: 11px; padding: 2px 9px; border-radius: 999px; background: rgba(167, 139, 250, .15); color: #cfc3ff; }
+.rl-tag.src { background: rgba(125, 196, 245, .14); color: #b5defa; }
+.rl-cid { font-family: var(--rl-mono); font-size: 12px; color: var(--rl-dim); }
+.rl-score { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 13px; }
+.rl-bar { height: 5px; border-radius: 5px; background: rgba(255, 255, 255, .08); overflow: hidden; margin: 0 0 10px; }
+.rl-bar i { display: block; height: 100%; width: 0; background: var(--rl-grad); border-radius: 5px; }
+.rl-text { font-size: 13.5px; line-height: 1.55; color: #c9cfe6; margin: 0; }
+.rl-empty { text-align: center; color: var(--rl-dim); padding: 26px; border: 1px dashed var(--rl-border); border-radius: 12px; font-size: 14px; }
+
+/* ---------- answer + metrics ---------- */
+#rl-answer { border-left: 3px solid var(--rl-lilac) !important; font-size: 15.5px; line-height: 1.65; min-height: 80px; padding: 14px 18px !important; }
+.rl-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.rl-chip {
+  padding: 7px 13px; border-radius: 10px; background: var(--rl-glass); border: 1px solid var(--rl-border);
+  font-size: 12px; color: var(--rl-dim); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.rl-chip b { display: block; font-size: 17px; color: var(--rl-text); font-variant-numeric: tabular-nums; }
+.rl-chip.err { border-color: var(--rl-bad); color: var(--rl-bad); }
+.rl-chip.err b { color: var(--rl-bad); font-size: 14px; }
+
+/* ---------- tables ---------- */
+.rl-sec { display: flex; align-items: baseline; gap: 12px; margin: 24px 0 10px; }
+.rl-sec h3 { margin: 0; font-family: Georgia, serif; font-size: 21px; color: var(--rl-text); }
+.rl-sec span { color: var(--rl-dim); font-size: 13px; }
+.rl-tablewrap {
+  overflow-x: auto; max-width: 100%; border: 1px solid var(--rl-border); border-radius: 12px;
+  background: var(--rl-glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+table.rl-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.rl-table, .rl-table th, .rl-table td { border-left: 0 !important; border-right: 0 !important; border-top: 0 !important; }
+.rl-table th {
+  text-align: left; padding: 11px 14px; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--rl-dim);
+  border-bottom: 1px solid var(--rl-border) !important; cursor: pointer; user-select: none; white-space: nowrap; background: transparent !important;
+}
+.rl-table th:hover { color: var(--rl-lilac); }
+.rl-table th.sorted-asc::after { content: " \25B2"; font-size: 9px; }
+.rl-table th.sorted-desc::after { content: " \25BC"; font-size: 9px; }
+.rl-table td { padding: 9px 14px; border-bottom: 1px solid rgba(255, 255, 255, .06) !important; white-space: nowrap; background: transparent; color: var(--rl-text); }
+.rl-table tbody tr:hover td { background: rgba(255, 255, 255, .04) !important; }
+.rl-table tr.top td { background: rgba(167, 139, 250, .12) !important; }
+.rl-table tr.top td:first-child { box-shadow: inset 3px 0 0 #a78bfa; }
+.rl-badge { font-size: 10px; padding: 2px 8px; border-radius: 999px; margin-left: 8px; background: var(--rl-grad); color: #12142a; font-weight: 800; letter-spacing: .05em; }
+.rl-cell { display: flex; align-items: center; gap: 10px; min-width: 150px; }
+.rl-cell .rl-bar { flex: 1; margin: 0; }
+.rl-cell span { width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
+.rl-pending { padding: 22px; text-align: center; color: var(--rl-dim); border: 1px dashed var(--rl-border); border-radius: 12px; background: var(--rl-glass); }
+.rl-pending .pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #e0a93b; margin-right: 8px; }
+
+/* ---------- charts ---------- */
+.rl-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+.rl-fig {
+  margin: 0; padding: 10px; border-radius: 12px; cursor: zoom-in; background: var(--rl-glass);
+  border: 1px solid var(--rl-border); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: border-color .2s;
+}
+.rl-fig:hover { border-color: rgba(167, 139, 250, .6); }
+.rl-fig img { width: 100%; display: block; border-radius: 8px; background: #fff; }
+.rl-fig figcaption { margin-top: 8px; font-size: 13px; color: var(--rl-dim); text-align: center; }
+#rl-lightbox { position: fixed; inset: 0; z-index: 9999; display: none; place-items: center; background: rgba(8, 10, 22, .85); backdrop-filter: blur(6px); cursor: zoom-out; }
+#rl-lightbox img { max-width: 92vw; max-height: 90vh; background: #fff; border-radius: 10px; }
+
+/* ---------- entrance base states (JS reveals; CSS shows them after 4s if JS fails) ---------- */
+.rl-hit, .rl-row, .rl-chip, .rl-fig, .rl-node, .rl-sec, .rl-pending, .rl-empty,
+.rl-eyebrow, .rl-sub, .rl-stat, .rl-title .ch { opacity: 0; animation: rl-fb 0s 4s forwards; }
+@keyframes rl-fb { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .rl-hit, .rl-row, .rl-chip, .rl-fig, .rl-node, .rl-sec, .rl-pending, .rl-empty,
+  .rl-eyebrow, .rl-sub, .rl-stat, .rl-title .ch { opacity: 1; animation: none; }
+}

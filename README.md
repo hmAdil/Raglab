@@ -225,7 +225,19 @@ Launches the Gradio interface on `http://127.0.0.1:7860` with Playground, Leader
 
 ---
 
-## 9. Limitations and Reproducibility Notes
+## 9. Results Summary
+
+**Stage 1 (32 retrieval configurations, 27 answerable questions).** Three configurations tie for the best context recall of 0.741: `recursive__minilm__distilbert`, `recursive__bge__distilbert` and `recursive__bge__distilbert_bm25`, which became the Stage 2 configurations.
+- Chunking mattered more than the embedder: mean recall was 0.694 for recursive, 0.676 for fixed, 0.652 for sentence and 0.622 for semantic, while BGE (0.666) and MiniLM (0.656) were close.
+- BM25 fusion raised mean recall from 0.624 to 0.698 and roughly doubled retrieval latency (16 ms to 32 ms).
+- ColBERT used alone was the weakest rescorer (0.583 against 0.664 for DistilBERT) and became competitive only with BM25 (0.700).
+- With 27 questions, one question is worth 0.037 of recall, so near-equal configurations cannot be separated.
+
+**Stage 2 (3 configurations x 2 prompts x 30 questions, judged by qwen2.5:7b).** Groundedness was 4.96 to 5.00 and the judge scored refusal accuracy at 1.00 for all six runs. Reading the answers, all 9 grounded refusals are the clean one-liner "Not found in the provided documents.", while at least one plain answer offered an unrelated 54 percent figure from a PyTorch tutorial and was still scored as a refusal, so the judge's refusal score probably flatters the plain prompt. Correctness ranged from 4.59 to 4.96. The grounded prompt produced about 40 percent shorter answers and 13 to 17 percent faster generation, but lowered correctness for two of three configurations (4.59 against 4.85). The best run on accuracy, speed and balance is `recursive__bge__distilbert_bm25__grounded` (correctness 4.96, total latency 3,519 ms), although the two fastest runs differ by only about 7 ms. Full tables are in `results/stage2.csv` and `results/decision_table.csv`.
+
+---
+
+## 10. Limitations and Reproducibility Notes
 
 1. **Greedy Stage 2 Selection:** Stage 2 tests prompt styles only across the top 3 retrieval setups identified in Stage 1 rather than the full 32 configurations. Potential interactions between prompt style and lower-ranked retrieval configurations are not captured.
 2. **Domain-Specific Corpus:** The corpus is restricted to technical documentation for FastAPI and PyTorch. Results may vary on unstructured narrative text or conversational data.
